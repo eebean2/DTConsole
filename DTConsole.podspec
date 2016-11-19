@@ -9,27 +9,14 @@
 Pod::Spec.new do |s|
   s.name             = 'DTConsole'
   s.version          = '0.1.0'
-  s.summary          = 'A short description of DTConsole.'
-
-# This description is used to generate tags and improve search results.
-#   * Think: What does it do? Why did you write it? What is the focus?
-#   * Try to keep it short, snappy and to the point.
-#   * Write the description between the DESC delimiters below.
-#   * Finally, don't worry about the indent, CocoaPods strips it!
-
-  s.description      = <<-DESC
-TODO: Add long description of the pod here.
-                       DESC
-
-  s.homepage         = 'https://github.com/<GITHUB_USERNAME>/DTConsole'
+  s.summary          = 'An on-device console for debugging purpose on iOS and tvOS'
+  s.description      = 'An on-device console for debugging purpose on iOS and tvOS.'
+  s.homepage         = 'https://github.com/eebean2/DTConsole'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Erik' => 'eebean2@me.com' }
-  s.source           = { :git => 'https://github.com/<GITHUB_USERNAME>/DTConsole.git', :tag => s.version.to_s }
-  # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
-
+  s.source           = { :git => 'https://github.com/eebean2/DTConsole.git', :tag => s.version.to_s }
   s.ios.deployment_target = '8.0'
-
   s.source_files = 'DTConsole/Classes/**/*'
   
   # s.resource_bundles = {

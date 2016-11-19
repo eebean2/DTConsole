@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'DTConsole_Example' do
+  pod 'DTConsole', :path => '../'
+
+  target 'DTConsole_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end

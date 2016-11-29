@@ -14,7 +14,7 @@ internal class DTLauncher: NSObject, UITextFieldDelegate {
     
     // Console Design
     internal private(set) var orientation = ConsoleOrientation.default
-    private var frame = CGRect()
+    private var frame: CGRect!
     
     // Console Layout
     internal var x: CGFloat? = { return DTConsole.Settings.x }()

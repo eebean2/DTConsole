@@ -1,0 +1,6 @@
+framework module DTConsole {
+  umbrella header "DTConsole-umbrella.h"
+
+  export *
+  module * { export * }
+}

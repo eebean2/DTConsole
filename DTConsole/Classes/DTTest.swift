@@ -7,9 +7,13 @@
 
 import UIKit
 
-internal class DTTest: NSObject, UITextFieldDelegate {
-    static let sharedInstance = DTTest()
-    private override init(){super.init(); SysConsole.prErr("No current items in testing")}
-    
-    // There are currently no operations in testing
+public class DTTest {
+    private let console = DTConsole.sharedInstance
+    public init() { }
+    public func enableDiagnostic() { DTConsole.Settings.diagnosticMode = true }
+//    public func betaAuth() {
+//        console.status = 200
+//        console.token = .authenticated
+//        console.ex = Date() + 86400
+//    }
 }

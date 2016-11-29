@@ -2,6 +2,10 @@ use_frameworks!
 
 target 'DTConsole_Example' do
   pod 'DTConsole', :path => '../'
+  pod 'Lock', '~> 1.26'
+  pod 'Auth0', '~> 1.0'
+  pod 'Alamofire', '~> 4.0'
+  pod 'AFNetworking', '~> 3.0'
 
   target 'DTConsole_Tests' do
     inherit! :search_paths

@@ -7,7 +7,7 @@
 
 import UIKit
 
-internal class DTCommand: NSObject, UITextFieldDelegate {
+internal class DTCommand {
     
     let console = DTConsole.sharedInstance
     weak var delegate: DTCommandDelegate?
@@ -16,7 +16,7 @@ internal class DTCommand: NSObject, UITextFieldDelegate {
         return delegate?.commandList()
     }
     
-    override init() { super.init() }
+    init() { }
     
     var command = String()
     var arguments = [String]()
@@ -48,23 +48,23 @@ internal class DTCommand: NSObject, UITextFieldDelegate {
         let command = c.lowercased()
         if commands.contains(command) {
             if arguments!.isEmpty {
-                commandList(command: command)
+                commandList(command)
             } else {
-                commandList(command: command, argument: arguments!.first)
+                commandList(command, argument: arguments!.first)
             }
         } else if userCommands != nil && userCommands!.contains(command) {
             if delegate == nil {
                 console.printError("CommandDelegate not set! Please call console.commandDelegate = self", method: .both)
             } else {
                 
-                delegate!.didGetCommand(command: command, withArguments: arguments)
+                delegate!.didGetCommand(command, withArguments: arguments)
             }
         } else {
             console.printError("Invalid Command", method: .both)
         }
     }
     
-    func commandList(command: String, argument: String? = nil) {
+    func commandList(_ command: String, argument: String? = nil) {
         let color = getColor(forString: argument)
         switch command {
         case StockCommands.enterFS.rawValue:
@@ -131,14 +131,23 @@ internal class DTCommand: NSObject, UITextFieldDelegate {
             color = string!
         }
         switch color {
-        case "black":
-            return UIColor.black
-        case "blue":
-            return UIColor.blue
-        case "green":
-            return UIColor.green
-        default:
-            return nil
+        case "black":       return UIColor.black
+        case "blue":        return UIColor.blue
+        case "brown":       return UIColor.brown
+        case "cyan":        return UIColor.cyan
+        case "darkgray":    return UIColor.darkGray
+        case "daktext":    return UIColor.darkText
+        case "gray":        return UIColor.gray
+        case "green":       return UIColor.green
+        case "lightgray":   return UIColor.lightGray
+        case "lighttext":   return UIColor.lightText
+        case "magenta":     return UIColor.magenta
+        case "orange":      return UIColor.orange
+        case "purple":      return UIColor.purple
+        case "red":         return UIColor.red
+        case "whte":        return UIColor.white
+        case "yellow":      return UIColor.yellow
+        default:            return nil
         }
     }
 }

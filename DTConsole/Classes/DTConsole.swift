@@ -6,13 +6,15 @@
 */
 
 import UIKit
+import Auth0
+import Lock
 
 @available(watchOS, unavailable, message: "Please connect to an iPhone using Conosle to enable custom watchOS logging")
 public class DTConsole {
     
     /// The Console
-    static let sharedInstance = DTConsole()
-    private let launcher = DTLauncher()
+    public static let sharedInstance = DTConsole()
+    private var launcher: DTLauncher!
     
     /**************************************************************************/
     //                           MARK: Variables
@@ -27,7 +29,7 @@ public class DTConsole {
     private var textField: UITextField?
     private var buttonBar: UIView?
     private var fullButton: UIButton?
-    private var view = UIView()
+    private var view: UIView?
     private var setup = false
     /// The console delegate
     public weak var delegate: DTConsoleDelegate?
@@ -38,17 +40,21 @@ public class DTConsole {
     }
     
     /**************************************************************************/
+    //                         MARK: Auth Variables
+    internal var token: AuthTokenStatus = .unauthenticated
+    internal var profile: A0UserProfile?
+    internal var status = 0
+    internal var ex = Date()
+    internal var localToken: A0Token?
+    internal var email: String?
+    
+    /**************************************************************************/
     //                         MARK: Setup & init
     
-    private func initSetup() {
+    private init() {
         NotificationCenter.default.addObserver(self, selector: #selector(self.enterTextEdit(_:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.exitTextEdit), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
-    }
-    
-    private init() {
-        if !setup {
-            initSetup()
-        }
+        launcher = DTLauncher()
     }
     
     /// Setup the console for use as a popover
@@ -61,9 +67,32 @@ public class DTConsole {
             SysConsole.prErr("Console is disabled in a live enviroment, to re-enable, in Xcode, change Console.Settings.liveOverride to false")
             return
         }
+        if status != 200 {
+            DTAuth().login(key: nil, passcode: nil, completion: { (profile) in
+                if profile != nil {
+                    self.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
+                } else {
+                    SysConsole.prErr("Auth :: There was an error logging in, please try again")
+                    self.status = DTAuth().getStatus("sorry")
+                }
+            })
+        } else if ex < Date() {
+            status = DTAuth().getStatus("expired")
+        }
+        
+        if status == 200 {
+            self.orientation = orientation
+        } else {
+            if orientation != .bottom || orientation != .default {
+                SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+            }
+            self.orientation = .default
+            Settings.gestureOverride = false
+            Settings.fullscreenOverride = false
+//            Settings.moveOverride = false
+        }
         self.view = view
-        self.orientation = orientation
-        consoleSetup()
+        self.consoleSetup()
         self.setupComplete = true
     }
     
@@ -76,30 +105,75 @@ public class DTConsole {
             SysConsole.prErr("Console is disabled in a live enviroment, to re-enable, in Xcode, change Console.Settings.liveOverride to false")
             return
         }
+        if status != 200 {
+            DTAuth().login(key: nil, passcode: nil, completion: { (profile) in
+                self.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
+                if self.status != 200 {
+                    SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+                    return
+                }
+            })
+        } else if ex < Date() {
+            status = DTAuth().getStatus("expired")
+        }
+        
         self.view = view
-        viewSetup()
-        setupComplete = true
+        self.viewSetup()
         self.state = .asView
+        self.setupComplete = true
     }
     
+    /// Setup the console with a textbox for use as a popover
+    ///
+    /// - Parameters:
+    ///     - view: The view you are attaching the console to
+    ///     - orientation: (optional) The orientation you are setting the view
     public func setupTextConsole(on view: UIView, orientation: ConsoleOrientation = .default) {
         if Settings.liveOverride {
             SysConsole.prErr("Console is disabled in a live enviroment, to re-enable, in Xcode, change Console.Settings.liveOverride to false")
             return
         }
+        if status != 200 {
+            DTAuth().login(key: nil, passcode: nil, completion: { (profile) in
+                self.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
+                if self.status != 200 {
+                    SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+                    return
+                }
+            })
+        } else if ex < Date() {
+            status = DTAuth().getStatus("expired")
+        }
         self.view = view
         self.orientation = orientation
-        self.setupComplete = true
         self.consoleTextSetup()
+        self.setupComplete = true
     }
     
-    public func setupTextConsole(in view: UIView) {
+    /// Setup and display a console with textbox for use as it's own view in another view
+    ///
+    /// - Parameters:
+    ///     - view: The view you are attaching the console to
+    public func setupTextConsoleAndDisplay(in view: UIView) {
         if Settings.liveOverride {
             SysConsole.prErr("Console is disabled in a live enviroment, to re-enable, in Xcode, change Console.Settings.liveOverride to false")
             return
         }
+        if status != 200 {
+            DTAuth().login(key: nil, passcode: nil, completion: { (profile) in
+                self.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
+                if self.status != 200 {
+                    SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+                    return
+                }
+            })
+        } else if ex < Date() {
+            status = DTAuth().getStatus("expired")
+        }
         self.view = view
+        self.viewTextSetup()
         self.state = .asView
+        self.setupComplete = true
     }
     
     /**************************************************************************/
@@ -115,12 +189,23 @@ public class DTConsole {
             SysConsole.prErr("Console is disabled in a live enviroment, to re-enable, in Xcode, change Console.Settings.liveOverride to false")
             return
         }
-        self.view = view
-        Settings.width! = rect.width
-        Settings.height! = rect.height
-        Settings.x = rect.minX
-        Settings.y = rect.minY
-        setupComplete = true
+        DTAuth().login(key: nil, passcode: nil) { (profile) in
+            if profile != nil {
+                self.profile = profile!
+                let status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
+                if status == 200 {
+                    self.status = status
+                    self.view = view
+                    self.overrideWidth(rect.width)
+                    self.overrideHeight(rect.height)
+                    Settings.x = rect.minX
+                    Settings.y = rect.minY
+                    self.setupComplete = true
+                } else {
+                    SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+                }
+            }
+        }
     }
     
     /// Override console width
@@ -128,7 +213,11 @@ public class DTConsole {
     /// - Parameters:
     ///     - width: The width you wish to set
     public func overrideWidth(_ width: CGFloat) {
-        Settings.width! = width
+        if status != 200 {
+            SysConsole.prErr("While \(token.description), you may only use the standard popover console from the bottom.")
+            return
+        }
+        Settings.width = width
         Settings.widthOverride = true
     }
     
@@ -137,28 +226,32 @@ public class DTConsole {
     /// - Parameters:
     ///     - height: The height you wish to set
     public func overrideHeight(_ height: CGFloat) {
-        Settings.height! = height
+        if status != 200 {
+            SysConsole.prErr("While \(token.description), you may only use the standard popover console from the bottom.")
+            return
+        }
+        Settings.height = height
         Settings.heightOverride = true
+    }
+    
+    /// Override console starting point
+    ///
+    /// - Parameters:
+    ///     - point: The point you wish the conosle to start at
+    public func overridePoint(_ point: CGPoint) {
+        if status != 200 {
+            SysConsole.prErr("While \(token.description), you may only use the standard popover console from the bottom.")
+            return
+        }
+        Settings.pointOverride = true
+        Settings.x = point.x
+        Settings.y = point.y
     }
     
     /// Resets the console to default peramaters, call Console.setup(...) to setup again
     ///
     /// - Note: This resets Move, Fullscreen, and Gesture Overrides, but NOT the live override.
     public func resetConsole() {
-        
-        // Console Reset
-        
-        setupComplete = false
-        orientation = .default
-        if state != .close {
-            close()
-        }
-        if console != nil {
-            console = nil
-        }
-        if background != nil {
-            background = nil
-        }
         
         // Setting Reset
         
@@ -173,23 +266,68 @@ public class DTConsole {
         Settings.widthOverride = false
         Settings.heightOverride = false
         Settings.pointOverride = false
-        Settings.moveOverride = false
+//        Settings.moveOverride = false
         Settings.fullscreenOverride = false
         Settings.gestureOverride = true
         Settings.clearOverride = false
         
-        SysConsole.prOvr("--Console reset complete, call Console.setup(...) to restart the console")
-    }
-    
-    public func removeConsole() {
-        setupComplete = false
+        // Console Reset
+        
+        orientation = .default
+        state = .close
         if state != .close {
             close()
         }
         if console != nil {
+            console!.removeFromSuperview()
             console = nil
         }
+        if textField != nil {
+            textField!.removeFromSuperview()
+            textField = nil
+        }
+        if buttonBar != nil {
+            buttonBar!.removeFromSuperview()
+            buttonBar = nil
+        }
         if background != nil {
+            background!.removeFromSuperview()
+            background = nil
+        }
+        if fullButton != nil {
+            fullButton?.removeFromSuperview()
+            fullButton = nil
+        }
+        if view != nil {
+            view = nil
+        }
+        
+        setupComplete = false
+        
+        SysConsole.prOvr("--Console reset complete, call Console.setup(...) to restart the console")
+    }
+    
+    /// Destroys the console
+    public func removeConsole() {
+        setupComplete = false
+        orientation = .default
+        if state != .close {
+            close()
+        }
+        if console != nil {
+            console!.removeFromSuperview()
+            console = nil
+        }
+        if textField != nil {
+            textField!.removeFromSuperview()
+            textField = nil
+        }
+        if buttonBar != nil {
+            buttonBar!.removeFromSuperview()
+            buttonBar = nil
+        }
+        if background != nil {
+            background!.removeFromSuperview()
             background = nil
         }
     }
@@ -197,15 +335,26 @@ public class DTConsole {
     /// Reset width override
     public func resetWidth() {
         Settings.widthOverride = false
+        Settings.width = nil
         consoleSetup()
     }
     
     /// Reset height override
     public func resetHeight() {
         Settings.heightOverride = false
+        Settings.height = nil
         consoleSetup()
     }
     
+    /// Reset point override
+    public func resetPoint() {
+        Settings.pointOverride = false
+        Settings.x = nil
+        Settings.y = nil
+        consoleSetup()
+    }
+    
+    /// Clears the console
     @objc public func clear() {
         console!.text = nil
     }
@@ -214,23 +363,31 @@ public class DTConsole {
     //                         MARK: Private Func's
     
     private func viewSetup() {
-        let frame = CGRect(x: 0, y: 0, width: view.frame.width, height: view.frame.height)
-        console = UITextView(frame: frame)
-        console!.center = view.center
-        console!.textColor = Settings.textColor
-        #if os(iOS) || os(macOS)
-            console!.isEditable = false
-        #endif
-        console!.backgroundColor = Settings.backgroundColor
-        console!.text = "Welcome to \(Bundle.main.infoDictionary![kCFBundleNameKey as String]!)\n\n"
-        view.addSubview(console!)
-        view.bringSubview(toFront: console!)
+        background = launcher.getBackground(forFrame: view!.frame)
+        background!.frame = CGRect(x: 0, y: 0, width: view!.frame.width, height: view!.frame.height)
+        background!.center = view!.center
+        console = launcher.getConsole(forFrame: view!.frame)
+        console!.frame = CGRect(x: 0, y: 0, width: background!.frame.width, height: background!.frame.height)
+        background!.addSubview(console!)
+        view!.addSubview(background!)
+    }
+    
+    private func viewTextSetup() {
+        background = launcher.getBackground(forFrame: view!.frame)
+        background!.frame = CGRect(x: 0, y: 0, width: view!.frame.width, height: view!.frame.height)
+        background!.center = view!.center
+        console = launcher.getConsole(forFrame: background!.frame)
+        console!.frame = CGRect(x: 0, y: 0, width: background!.frame.width, height: background!.frame.height - 40)
+        textField = launcher.getTextField(forFrame: background!.frame)
+        background!.addSubview(console!)
+        background!.addSubview(textField!)
+        view!.addSubview(background!)
     }
     
     private func consoleTextSetup() {
-        background = launcher.getBackground(forFrame: view.frame)
+        background = launcher.getBackground(forFrame: view!.frame)
         background!.backgroundColor = DTConsole.Settings.backgroundColor
-        background!.center.x = view.center.x
+        background!.center.x = view!.center.x
         console = launcher.getConsole(forFrame: background!.frame, textBox: true)
         textField = launcher.getTextField(forFrame: background!.frame)
         let temp = launcher.getButtonBar(forFrame: background!.frame, textBox: true)
@@ -256,11 +413,11 @@ public class DTConsole {
         background!.addSubview(buttonBar!)
         background!.addSubview(textField!)
         
-        view.addSubview(background!)
+        view!.addSubview(background!)
     }
     
     private func consoleSetup() {
-        background = launcher.getBackground(forFrame: view.frame)
+        background = launcher.getBackground(forFrame: view!.frame)
         console = launcher.getConsole(forFrame: background!.frame)
         let temp = launcher.getButtonBar(forFrame: background!.frame)
         buttonBar = temp.bar
@@ -284,7 +441,7 @@ public class DTConsole {
         background!.addSubview(console!)
         background!.addSubview(buttonBar!)
         background!.bringSubview(toFront: buttonBar!)
-        view.addSubview(background!)
+        view!.addSubview(background!)
     }
     
     private func giveTargets(for buttons: [UIButton]) {
@@ -316,7 +473,7 @@ public class DTConsole {
         }
     }
     
-    var i = false
+    private var i = false
     @objc private func gestureCheck(_ sender: UISwipeGestureRecognizer) {
         if sender.direction == .up {
             if Settings.diagnosticMode {
@@ -458,7 +615,7 @@ public class DTConsole {
         
         if let keyboardSize = (sender.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             UIView.animate(withDuration: 0.5, animations: {
-                let frame = CGRect(x: 20, y: 20, width: self.view.frame.width - 40, height: self.view.frame.height - keyboardSize.height - 20)
+                let frame = CGRect(x: 20, y: 20, width: self.view!.frame.width - 40, height: self.view!.frame.height - keyboardSize.height - 20)
                 self.background!.frame = frame
                 if self.buttonBar != nil {
                     if self.textField != nil {
@@ -507,7 +664,7 @@ public class DTConsole {
         switch orientation {
         case .default, .bottom:
             UIView.animate(withDuration: 0.5, animations: {
-                self.background!.frame = CGRect(x: 20, y: self.view.frame.maxY - self.background!.frame.height, width: self.background!.frame.width, height: self.background!.frame.height)
+                self.background!.frame = CGRect(x: 20, y: self.view!.frame.maxY - self.background!.frame.height, width: self.background!.frame.width, height: self.background!.frame.height)
             }, completion: { (complete) in
                 if complete {
                     self.state = .open
@@ -529,7 +686,7 @@ public class DTConsole {
             })
         case .left:
             UIView.animate(withDuration: 0.5, animations: {
-                self.background!.frame = CGRect(x: 0, y: self.view.center.y - (self.background!.frame.height / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
+                self.background!.frame = CGRect(x: 0, y: self.view!.center.y - (self.background!.frame.height / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
             }, completion: { (complete) in
                 if complete {
                     self.state = .open
@@ -540,7 +697,7 @@ public class DTConsole {
             })
         case .right:
             UIView.animate(withDuration: 0.5, animations: {
-                self.background!.frame = CGRect(x: self.view.frame.maxX - self.background!.frame.width, y: self.view.center.y - (self.background!.frame.height / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
+                self.background!.frame = CGRect(x: self.view!.frame.maxX - self.background!.frame.width, y: self.view!.center.y - (self.background!.frame.height / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
             }, completion: { (complete) in
                 if complete {
                     self.state = .open
@@ -570,10 +727,13 @@ public class DTConsole {
         if Settings.diagnosticMode {
             SysConsole.prDiag("Did run \(#function)")
         }
+        if textField != nil && textField!.isFirstResponder {
+            textField!.resignFirstResponder()
+        }
         switch orientation {
         case .default, .bottom:
             UIView.animate(withDuration: 0.5, animations: {
-                self.background!.frame = CGRect(x: 20, y: self.view.frame.maxY, width: self.launcher.getWidth(), height: self.launcher.getHeight())
+                self.background!.frame = CGRect(x: 20, y: self.view!.frame.maxY, width: self.launcher.getWidth(), height: self.launcher.getHeight())
             }, completion: { (complete) in
                 if complete {
                     self.state = .close
@@ -584,7 +744,7 @@ public class DTConsole {
             })
         case .top:
             UIView.animate(withDuration: 0.5, animations: {
-                self.background!.frame = CGRect(x: 20, y: self.view.frame.minY - self.background!.frame.height, width: self.launcher.getWidth(), height: self.launcher.getHeight())
+                self.background!.frame = CGRect(x: 20, y: self.view!.frame.minY - self.background!.frame.height, width: self.launcher.getWidth(), height: self.launcher.getHeight())
             }, completion: { (complete) in
                 if complete {
                     self.state = .close
@@ -595,7 +755,7 @@ public class DTConsole {
             })
         case .left:
             UIView.animate(withDuration: 0.5, animations: {
-                self.background!.frame = CGRect(x: self.view.frame.minX - self.background!.frame.width, y: self.view.center.y - (self.background!.frame.height / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
+                self.background!.frame = CGRect(x: self.view!.frame.minX - self.background!.frame.width, y: self.view!.center.y - (self.background!.frame.height / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
             }, completion: { (complete) in
                 if complete {
                     self.state = .close
@@ -606,7 +766,7 @@ public class DTConsole {
             })
         case .right:
             UIView.animate(withDuration: 0.5, animations: {
-                self.background!.frame = CGRect(x: self.view.frame.maxX, y: self.view.center.y - (self.background!.frame.height / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
+                self.background!.frame = CGRect(x: self.view!.frame.maxX, y: self.view!.center.y - (self.background!.frame.height / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
             }, completion: { (complete) in
                 if complete {
                     self.state = .close
@@ -624,6 +784,10 @@ public class DTConsole {
             SysConsole.prErr("You must complete setup first")
             return
         }
+        if status != 200 {
+            SysConsole.prErr("While \(token.description), you may only use the standard popover console from the bottom.")
+            return
+        }
         if !Settings.fullscreenOverride {
             SysConsole.prErr("Fullscreen has been disabled, please re-enable it by setting Console.Settings.fullscreenOverride to true")
         }
@@ -631,7 +795,7 @@ public class DTConsole {
             SysConsole.prDiag("Did run \(#function)")
         }
         UIView.animate(withDuration: 0.5, animations: {
-            let frame = CGRect(x: 20, y: 20, width: self.view.frame.width - 40, height: self.view.frame.height - 40)
+            let frame = CGRect(x: 20, y: 20, width: self.view!.frame.width - 40, height: self.view!.frame.height - 40)
             self.background!.frame = frame
             if self.buttonBar != nil {
                 if self.textField != nil {
@@ -692,7 +856,7 @@ public class DTConsole {
         switch orientation {
         case .default, .bottom:
             UIView.animate(withDuration: 0.5, animations: {
-                let frame = CGRect(x: 20, y: self.view.frame.maxY - self.launcher.getHeight(), width: self.launcher.getWidth(), height: self.launcher.getHeight())
+                let frame = CGRect(x: 20, y: self.view!.frame.maxY - self.launcher.getHeight(), width: self.launcher.getWidth(), height: self.launcher.getHeight())
                 self.background!.frame = frame
                 if self.buttonBar != nil {
                     if self.textField != nil {
@@ -746,7 +910,7 @@ public class DTConsole {
             })
         case .left:
             UIView.animate(withDuration: 0.5, animations: {
-                let frame = CGRect(x: 0, y: self.view.center.y - (self.launcher.getHeight() / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
+                let frame = CGRect(x: 0, y: self.view!.center.y - (self.launcher.getHeight() / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
                 self.background!.frame = frame
                 if self.buttonBar != nil {
                     if self.textField != nil {
@@ -773,7 +937,7 @@ public class DTConsole {
             })
         case .right:
             UIView.animate(withDuration: 0.5, animations: {
-                let frame = CGRect(x: self.view.frame.maxX - self.launcher.getWidth(), y: self.view.center.y - (self.launcher.getHeight() / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
+                let frame = CGRect(x: self.view!.frame.maxX - self.launcher.getWidth(), y: self.view!.center.y - (self.launcher.getHeight() / 2), width: self.launcher.getWidth(), height: self.launcher.getHeight())
                 self.background!.frame = frame
                 if self.buttonBar != nil {
                     if self.textField != nil {
@@ -841,20 +1005,19 @@ public class DTConsole {
             SysConsole.prErr("You must complete setup first")
             return
         }
+        if status != 200 {
+            SysConsole.prErr("While \(token.description), you may only use the standard print function.")
+            return
+        }
+        print("\"Print Warning\" is not fully avalible yet and has been processed as normal text. Sorry for this inconviance.", method: .both)
         if method == .both {
-            print("\"Print Warning\" is not fully avalible yet and has been processed as normal text. Sorry for this inconviance.", method: .both)
-            
             var current = console!.text!
             current.append(String(describing: "\(item)\n"))
             console!.text = current
             SysConsole.prOvr(item)
         } else if method == .xcodeOnly {
-            printWarning("\"Print Warning\" is not fully avalible yet and has been processed as normal text. Sorry for this inconviance.", method: .xcodeOnly)
-            
             SysConsole.prOvr(item)
         } else if method == .default {
-            printWarning("\"Print Warning\" is not fully avalible yet and has been processed as normal text. Sorry for this inconviance.")
-            
             var current = console!.text!
             current.append(String(describing: "\(item)\n"))
             console!.text = current
@@ -873,20 +1036,15 @@ public class DTConsole {
             SysConsole.prErr("You must complete setup first")
             return
         }
+        print("\"Print Error\" is not fully avalible yet and has been processed as normal text. Sorry for this inconviance.", method: .both)
         if method == .both {
-            print("\"Print Error\" is not fully avalible yet and has been processed as normal text. Sorry for this inconviance.", method: .both)
-            
             var current = console!.text!
             current.append(String(describing: "\(item)\n"))
             console!.text = current
             SysConsole.prOvr(item)
         } else if method == .xcodeOnly {
-            printError("\"Print Error\" is not fully avalible yet and has been processed as normal text. Sorry for this inconviance.", method: .xcodeOnly)
-            
             SysConsole.prOvr(item)
         } else if method == .default {
-            printError("\"Print Error\" is not fully avalible yet and has been processed as normal text. Sorry for this inconviance.")
-            
             var current = console!.text!
             current.append(String(describing: "\(item)\n"))
             console!.text = current
@@ -896,20 +1054,35 @@ public class DTConsole {
     /**************************************************************************/
     //                             MARK: Settings
     
+    /// Set an email for trial use
+    public func setEmail(_ email: String) {
+        self.email = email
+    }
+    
     /// Change the background color of the console
+    ///
+    /// - Parameter color: The color you wish to set the console background
     public func setBackgroundColor(_ color: UIColor) {
         Settings.backgroundColor = color
         background?.backgroundColor = color
     }
     
     /// Change the console text color
+    ///
+    /// - Parameter color: The color you wish to set the console text
     public func setTextColor(_ color: UIColor) {
         Settings.textColor = color
         console?.textColor = color
     }
     
     /// Change the textfield border and text color
+    ///
+    /// - Parameter color: The color you wish to set the textbox background
     public func setTextFieldColor(_ color: UIColor) {
+        if token != AuthTokenStatus.authenticated || token != AuthTokenStatus.trial {
+            SysConsole.prErr("While \(token.description), you may only use the standard popover console from the bottom.")
+            return
+        }
         Settings.textFieldColor = color
         textField?.tintColor = color
         textField?.textColor = color
@@ -945,13 +1118,11 @@ public class DTConsole {
     
     /// Console Settings
     public class Settings {
-        public internal(set) static var verificationStatus = false
-        
         // Console Design
         
         /// The text color in the console
         ///
-        /// Default is Green
+        /// - Note: Default is Green
         public static var textColor: UIColor = .green
         /// The warning text color in the console
         ///
@@ -965,60 +1136,162 @@ public class DTConsole {
         public static var errorColor: UIColor = .red
         /// The background color in the console
         ///
-        /// Default is Black
+        /// - Note: Default is Black
         public static var backgroundColor: UIColor = .black
         /// The border and text color for the textbox
         ///
-        /// Default is white
+        /// - Note: Default is white
         public static var textFieldColor: UIColor = .white
         
         // Console Layout
         
-        /// In order to use this property, you must set widthOverride to true
-        public static var width: CGFloat?
-        /// In order to use this property, you must set heightOverride to true
-        public static var height: CGFloat?
-        /// In order to use this property, you must set pointOverride to true
-        ///
-        /// You also need to set Settings.y
-        public static var x: CGFloat?
-        /// In order to use this property, you must set pointOverride to true
-        ///
-        /// You also need to set Settings.x
-        public static var y: CGFloat?
+        /// The height of a custom console
+        public internal(set) static var width: CGFloat?
+        /// The width of a custom console
+        public internal(set) static var height: CGFloat?
+        /// The x point of a point override for the console starting position
+        public internal(set) static var x: CGFloat?
+        /// The y point of a point override for the console starting position
+        public internal(set) static var y: CGFloat?
         
         // Console Overrides
         
-        /// Allow override of the width
-        public static var widthOverride = false
-        /// Allow override of the height
-        public static var heightOverride = false
-        /// Allow override of the top left starting point
-        public static var pointOverride = false
+        /// Custom Width Override
+        ///
+        /// - Note: It is not recommended to have a 0 width, best practice is to set your final width, and move the entire console on and off screen
+        public internal(set) static var widthOverride = false
+        /// Custom Height Override
+        ///
+        /// - Note: It is not recommended to have a 0 height, best practice is to set your final height, move the entire console on and off screen
+        public internal(set) static var heightOverride = false
+        /// Custom console starting point
+        ///
+        /// - Note: This is the top left corner of the console
+        public internal(set) static var pointOverride = false
         /// Allow a movable console on iPad
         ///
-        /// False by default, set true to allow moving
+        /// - Note: False by default, set true to allow moving
+        /// - Attention: DO NOT USE IN LIVE APP
+        /// feature is not stable
+        /// - Experiment: This feature is for iPad only. It may not work, or may even crash the app.
         @available(tvOS, unavailable, message: "The tvOS Console is static")
-        public static var moveOverride = false
+        @available(*, unavailable, message: "A moveable console is not avalible in this release")
+        public static var moveOverride = false {
+            willSet(newOverride) {
+                if DTConsole.sharedInstance.status != 200 {
+                    if newOverride != false {
+                        SysConsole.prErr("While \(DTConsole.sharedInstance.token.description), you may not move the console")
+                        return
+                    } else {
+                        self.gestureOverride = newOverride
+                    }
+                } else {
+                    self.gestureOverride = newOverride
+                }
+            }
+        }
         /// Fullscreen support on iOS
         ///
-        /// True by default, set false to disable the fullscreen button
+        /// - Note: True by default, set false to disable the fullscreen button
         @available(tvOS, unavailable, message: "You can only use fullscreen on tvOS.")
-        public static var fullscreenOverride = true
+        public static var fullscreenOverride = true {
+            willSet(newOverride) {
+                if DTConsole.sharedInstance.status != 200 {
+                    if newOverride != false {
+                        SysConsole.prErr("While \(DTConsole.sharedInstance.token.description), you may not use fullscreen")
+                        return
+                    } else {
+                        self.gestureOverride = newOverride
+                    }
+                } else {
+                    self.gestureOverride = newOverride
+                }
+            }
+        }
         /// Set true for live enviroments
         public static var liveOverride = false
         /// Guesture Support in Popover Console
         ///
-        /// True by default, set false to disable gestures
+        /// - Note: True by default, set false to disable gestures
         @available(tvOS, unavailable, message: "Gestures are not supported on tvOS")
-        public static var gestureOverride = true
+        public static var gestureOverride: Bool = false {
+            willSet(newOverride) {
+                if DTConsole.sharedInstance.status != 200 {
+                    if newOverride != false {
+                        SysConsole.prErr("While \(DTConsole.sharedInstance.token.description), you may not use gestures")
+                        return
+                    } else {
+                        self.gestureOverride = newOverride
+                    }
+                } else {
+                    self.gestureOverride = newOverride
+                }
+            }
+        }
         /// Option to disable the clear button
         ///
-        /// False by default, set true to disable the clear button
+        /// - Note: False by default, set true to disable the clear button
         public static var clearOverride = false
         internal static var diagnosticMode = false
         internal static var diagnosticBackgroundColor: UIColor = .lightGray
         internal static var diagnosticTextColor: UIColor = .black
+    }
+    
+    /**************************************************************************/
+    //                             MARK: Authenticaion
+    
+    public class Authentication {
+        
+        /// The current key you are using
+        static public internal(set) var key = "_thisisthesamplekey_dtsuite2017_"
+        
+        /// Re-Authenticate using your current key
+        ///
+        /// - Paramater passcode: The passcode associated with your API key
+        /// - Note: It is recommended to update your key and passcode in Auth0.plist and use DTConsole.Authentication.authenticate() instead
+        /// - Note: DTSuite keys are authenticated using DTConsole.Authenticate.authenticateDTSuite(withKey:, passcode:)
+        static public func authenticate(passcode: String) {
+            DTAuth().login(key: key, passcode: passcode, completion: nil)
+        }
+        
+        /// Authenticate using a new key and passcode
+        ///
+        /// - Paramater
+        ///     - key: The new API key to authenticate with
+        ///     - passcode: The passcode associated with your API key
+        /// - Note: It is recommended to update your key and passcode in Auth0.plist and use DTConsole.Authentication.authenticate() instead
+        /// - Note: DTSuite keys are authenticated using DTConsole.Authenticate.authenticateDTSuite(withKey:, passcode:)
+        static public func authenticate(withKey key: String, passcode: String) {
+            DTAuth().login(key: key, passcode: passcode, completion: nil)
+        }
+        
+        /// Authenticate using key and passocde from your Auth0.plist
+        ///
+        /// - Note: DTSuite keys are authenticated using DTConsole.Authenticate.authenticateDTSuite(withKey:, passcode:)
+        static public func authenticate() {
+            SysConsole.prOvr("I ran :: Authenticate")
+            DTAuth().login(key: nil, passcode: nil, completion: nil)
+        }
+        
+        /// Activate trial of DTConsole
+        ///
+        /// - Paramater email: The email address you wish to use for the trial
+        /// - Note: DTSuite trial codes are authenticated using DTConsole.Authenticate.activateDTSuiteTrial(withEmail:, key:)
+        static public func activateTrial(withEmail email: String) {
+            
+        }
+        
+        /// Activate DTConsole using a trial of DTSuite
+        @available(*, unavailable, message: "DTSuite authentication is currently unavalible in this release")
+        static public func activateDTSuiteTrial(withEmail email: String, key: String) {
+            // TODO: Connect DTSuite Trial Authentication
+        }
+        
+        /// Activate DTConsole using a DTSuite key
+        @available(*, unavailable, message: "DTSuite authentication is currently unavalible in this release")
+        static public func authenticateDTSuite(withKey key: String, passcode: String) {
+            // TODO: Connect DTSuite Full Authentication
+        }
     }
 }
 

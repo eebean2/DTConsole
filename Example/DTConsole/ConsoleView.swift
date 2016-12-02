@@ -17,9 +17,9 @@ class ConsoleView: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         if type == "textbox" {
-            console.setupTextConsoleAndDisplay(in: view)
+            console.setupTextConsoleAndDisplay(in: view, completion: nil)
         } else if type == "console" {
-            console.setupAndDisplay(in: view)
+            console.setupAndDisplay(in: view, completion: nil)
         }
     }
     
@@ -28,4 +28,7 @@ class ConsoleView: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
+    @IBAction func clear() {
+        console.clear()
+    }
 }

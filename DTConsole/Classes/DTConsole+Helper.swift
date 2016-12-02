@@ -156,6 +156,7 @@ internal class DTAuth {
                 return AuthTokenStatus.unauthenticated.value
             } else {
                 self.console.token = .trial
+                SysConsole.prDiag("Trial Found")
                 return AuthTokenStatus.trial.value
             }
         } else if type == "full" {
@@ -251,7 +252,7 @@ internal class DTAuth {
             return
         } else {
             if profile.userMetadata["date"] as? Date != nil {
-                if (profile.userMetadata["date"] as! Date) < Date() {
+                if (profile.userMetadata["date"] as! Date) > Date() {
                     console.token = .expired
                     console.status = 0
                     SysConsole.prErr("Expired token found, resetting the console")

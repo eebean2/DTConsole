@@ -12,13 +12,12 @@ import DTConsole
 class ViewController: UIViewController {
     
     let console = DTConsole.sharedInstance
-//    let test = DTTest()
     var setup = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-    // REMOVE ME if you wish to activate with your own license
+// REMOVE ME if you wish to activate with your own license
         console.setEmail("support@yourrepairnow.com")
     }
 
@@ -32,17 +31,23 @@ class ViewController: UIViewController {
         if setup {
             console.resetConsole()
         }
-        console.setup(on: view)
-        console.display()
-        setup = true
+        console.setup(on: view) { (success) in
+            if success {
+                self.console.display()
+                self.setup = true
+            }
+        }
     }
     @IBAction func displayConsole() {
         if setup {
             console.resetConsole()
         }
-        console.setupTextConsole(on: view)
-        console.display()
-        setup = true
+        console.setupTextConsole(on: view) { (success) in
+            if success {
+                self.console.display()
+                self.setup = true
+            }
+        }
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {

@@ -62,65 +62,97 @@ public class DTConsole {
     /// - Parameters:
     ///     - view: The view you are attaching the console to
     ///     - orientation: (optional) The orientation you are setting the view
-    public func setup(on view: UIView, orientation: ConsoleOrientation = .default) {
+    public func setup(on view: UIView, orientation: ConsoleOrientation = .default, completion: ((Bool)->())?) {
         if Settings.liveOverride {
             SysConsole.prErr("Console is disabled in a live enviroment, to re-enable, in Xcode, change Console.Settings.liveOverride to false")
+            completion?(false)
             return
         }
         if status != 200 {
             DTAuth().login(key: nil, passcode: nil, completion: { (profile) in
                 if profile != nil {
                     self.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
+                    self.orientation = orientation
+                    self.view = view
+                    self.consoleSetup()
+                    self.setupComplete = true
+                    completion?(true)
                 } else {
                     SysConsole.prErr("Auth :: There was an error logging in, please try again")
                     self.status = DTAuth().getStatus("sorry")
+                    Settings.gestureOverride = false
+                    Settings.fullscreenOverride = false
+//                    Settings.moveOverride = false
+                    self.view = view
+                    self.consoleSetup()
+                    self.setupComplete = true
+                    completion?(true)
                 }
             })
-        } else if ex < Date() {
+        } else if ex > Date() {
             status = DTAuth().getStatus("expired")
-        }
-        
-        if status == 200 {
-            self.orientation = orientation
-        } else {
-            if orientation != .bottom || orientation != .default {
-                SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
-            }
-            self.orientation = .default
             Settings.gestureOverride = false
             Settings.fullscreenOverride = false
 //            Settings.moveOverride = false
+            self.view = view
+            self.consoleSetup()
+            self.setupComplete = true
+            completion?(true)
+        } else {
+            self.orientation = orientation
+            self.view = view
+            self.consoleSetup()
+            self.setupComplete = true
+            completion?(true)
         }
-        self.view = view
-        self.consoleSetup()
-        self.setupComplete = true
     }
     
     /// Setup and display the console for use as it's own view in another view
     ///
     /// - Parameters:
     ///     - view: The view you are attaching the console to
-    public func setupAndDisplay(in view: UIView) {
+    public func setupAndDisplay(in view: UIView, completion: ((Bool)->())?) {
         if Settings.liveOverride {
             SysConsole.prErr("Console is disabled in a live enviroment, to re-enable, in Xcode, change Console.Settings.liveOverride to false")
+            completion?(false)
             return
         }
         if status != 200 {
             DTAuth().login(key: nil, passcode: nil, completion: { (profile) in
+                
                 self.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
                 if self.status != 200 {
                     SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+                    completion?(false)
                     return
+                } else {
+                    self.view = view
+                    self.viewSetup()
+                    self.state = .asView
+                    self.setupComplete = true
+                    completion?(true)
                 }
+                
+//                if profile != nil {
+//                    
+//                } else {
+//                    SysConsole.prErr("Auth :: There was an error logging in, please try again")
+//                    completion?(false)
+//                    return
+//                }
             })
-        } else if ex < Date() {
+        } else if ex > Date() {
             status = DTAuth().getStatus("expired")
+            SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+            completion?(false)
+            return
+        } else {
+            self.view = view
+            self.viewSetup()
+            self.state = .asView
+            self.setupComplete = true
+            completion?(true)
         }
-        
-        self.view = view
-        self.viewSetup()
-        self.state = .asView
-        self.setupComplete = true
     }
     
     /// Setup the console with a textbox for use as a popover
@@ -128,52 +160,92 @@ public class DTConsole {
     /// - Parameters:
     ///     - view: The view you are attaching the console to
     ///     - orientation: (optional) The orientation you are setting the view
-    public func setupTextConsole(on view: UIView, orientation: ConsoleOrientation = .default) {
+    public func setupTextConsole(on view: UIView, orientation: ConsoleOrientation = .default, completion: ((Bool)->())?) {
         if Settings.liveOverride {
             SysConsole.prErr("Console is disabled in a live enviroment, to re-enable, in Xcode, change Console.Settings.liveOverride to false")
+            completion?(false)
             return
         }
         if status != 200 {
             DTAuth().login(key: nil, passcode: nil, completion: { (profile) in
+                
                 self.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
                 if self.status != 200 {
                     SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+                    completion?(false)
                     return
+                } else {
+                    self.view = view
+                    self.orientation = orientation
+                    self.consoleTextSetup()
+                    self.setupComplete = true
+                    completion?(true)
                 }
+                
+//                if profile != nil {
+//                    
+//                } else {
+//                    SysConsole.prErr("Auth :: There was an error logging in, please try again")
+//                    completion?(false)
+//                    return
+//                }
             })
-        } else if ex < Date() {
+        } else if ex > Date() {
             status = DTAuth().getStatus("expired")
+            SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+            completion?(false)
+            return
+        } else {
+            self.view = view
+            self.orientation = orientation
+            self.consoleTextSetup()
+            self.setupComplete = true
+            completion?(true)
         }
-        self.view = view
-        self.orientation = orientation
-        self.consoleTextSetup()
-        self.setupComplete = true
     }
     
     /// Setup and display a console with textbox for use as it's own view in another view
     ///
     /// - Parameters:
     ///     - view: The view you are attaching the console to
-    public func setupTextConsoleAndDisplay(in view: UIView) {
+    public func setupTextConsoleAndDisplay(in view: UIView, completion: ((Bool) ->())?) {
         if Settings.liveOverride {
             SysConsole.prErr("Console is disabled in a live enviroment, to re-enable, in Xcode, change Console.Settings.liveOverride to false")
+            completion?(false)
             return
         }
         if status != 200 {
             DTAuth().login(key: nil, passcode: nil, completion: { (profile) in
-                self.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
-                if self.status != 200 {
-                    SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+                if profile != nil {
+                    self.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
+                    if self.status != 200 {
+                        SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+                        completion?(false)
+                        return
+                    } else {
+                        self.view = view
+                        self.viewTextSetup()
+                        self.state = .asView
+                        self.setupComplete = true
+                        completion?(true)
+                    }
+                } else {
+                    SysConsole.prErr("Auth :: There was an error logging in, please try again")
+                    completion?(false)
                     return
                 }
             })
-        } else if ex < Date() {
+        } else if ex > Date() {
             status = DTAuth().getStatus("expired")
+            SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+            completion?(false)
+        } else {
+            self.view = view
+            self.viewTextSetup()
+            self.state = .asView
+            self.setupComplete = true
+            completion?(true)
         }
-        self.view = view
-        self.viewTextSetup()
-        self.state = .asView
-        self.setupComplete = true
     }
     
     /**************************************************************************/
@@ -184,27 +256,44 @@ public class DTConsole {
     /// - Parameters:
     ///     - view: The view you are attaching the console to
     ///     - rect: The shape you desire the view to be
-    public func overrideSetup(on view: UIView, withShape rect: CGRect) {
+    public func overrideSetup(on view: UIView, withShape rect: CGRect, completion: ((Bool)->())?) {
         if Settings.liveOverride {
             SysConsole.prErr("Console is disabled in a live enviroment, to re-enable, in Xcode, change Console.Settings.liveOverride to false")
+            completion?(false)
             return
         }
-        DTAuth().login(key: nil, passcode: nil) { (profile) in
-            if profile != nil {
-                self.profile = profile!
-                let status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
-                if status == 200 {
-                    self.status = status
-                    self.view = view
-                    self.overrideWidth(rect.width)
-                    self.overrideHeight(rect.height)
-                    Settings.x = rect.minX
-                    Settings.y = rect.minY
-                    self.setupComplete = true
+        if status != 200 {
+            DTAuth().login(key: nil, passcode: nil, completion: { (profile) in
+                if profile != nil {
+                    self.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
+                    if self.status != 200 {
+                        SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+                        completion?(false)
+                        return
+                    } else {
+                        self.view = view
+                        self.overrideWidth(rect.width)
+                        self.overrideHeight(rect.height)
+                        self.overridePoint(CGPoint(x: rect.minX, y: rect.minY))
+                        completion?(true)
+                    }
                 } else {
-                    SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+                    SysConsole.prErr("Auth :: There was an error logging in, please try again")
+                    completion?(false)
+                    return
                 }
-            }
+            })
+        } else if ex > Date() {
+            status = DTAuth().getStatus("expired")
+            SysConsole.prErr("While \(self.token.description), you may only use the standard popover console from the bottom.")
+            completion?(false)
+            return
+        } else {
+            self.view = view
+            self.overrideWidth(rect.width)
+            self.overrideHeight(rect.height)
+            self.overridePoint(CGPoint(x: rect.minX, y: rect.minY))
+            completion?(true)
         }
     }
     
@@ -266,10 +355,12 @@ public class DTConsole {
         Settings.widthOverride = false
         Settings.heightOverride = false
         Settings.pointOverride = false
-//        Settings.moveOverride = false
-        Settings.fullscreenOverride = false
-        Settings.gestureOverride = true
-        Settings.clearOverride = false
+        if status == 200 {
+//            Settings.moveOverride = false
+            Settings.fullscreenOverride = true
+            Settings.gestureOverride = true
+            Settings.clearOverride = false
+        }
         
         // Console Reset
         
@@ -366,7 +457,7 @@ public class DTConsole {
         background = launcher.getBackground(forFrame: view!.frame)
         background!.frame = CGRect(x: 0, y: 0, width: view!.frame.width, height: view!.frame.height)
         background!.center = view!.center
-        console = launcher.getConsole(forFrame: view!.frame)
+        console = launcher.getConsole(forFrame: background!.frame)
         console!.frame = CGRect(x: 0, y: 0, width: background!.frame.width, height: background!.frame.height)
         background!.addSubview(console!)
         view!.addSubview(background!)
@@ -1214,7 +1305,7 @@ public class DTConsole {
         ///
         /// - Note: True by default, set false to disable gestures
         @available(tvOS, unavailable, message: "Gestures are not supported on tvOS")
-        public static var gestureOverride: Bool = false {
+        public static var gestureOverride: Bool = true {
             willSet(newOverride) {
                 if DTConsole.sharedInstance.status != 200 {
                     if newOverride != false {
@@ -1242,16 +1333,20 @@ public class DTConsole {
     
     public class Authentication {
         
-        /// The current key you are using
-        static public internal(set) var key = "_thisisthesamplekey_dtsuite2017_"
-        
         /// Re-Authenticate using your current key
         ///
         /// - Paramater passcode: The passcode associated with your API key
         /// - Note: It is recommended to update your key and passcode in Auth0.plist and use DTConsole.Authentication.authenticate() instead
         /// - Note: DTSuite keys are authenticated using DTConsole.Authenticate.authenticateDTSuite(withKey:, passcode:)
-        static public func authenticate(passcode: String) {
-            DTAuth().login(key: key, passcode: passcode, completion: nil)
+        static public func authenticate(passcode: String, completion: ((Bool)->())?) {
+            DTAuth().login(key: nil, passcode: passcode, completion: { (profile) in
+                if profile != nil {
+                    DTConsole.sharedInstance.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
+                    completion?(true)
+                } else {
+                    completion?(false)
+                }
+            })
         }
         
         /// Authenticate using a new key and passcode
@@ -1268,9 +1363,15 @@ public class DTConsole {
         /// Authenticate using key and passocde from your Auth0.plist
         ///
         /// - Note: DTSuite keys are authenticated using DTConsole.Authenticate.authenticateDTSuite(withKey:, passcode:)
-        static public func authenticate() {
-            SysConsole.prOvr("I ran :: Authenticate")
-            DTAuth().login(key: nil, passcode: nil, completion: nil)
+        static public func authenticate(completion: ((Bool)->())?) {
+            DTAuth().login(key: nil, passcode: nil, completion: { (profile) in
+                if profile != nil {
+                    DTConsole.sharedInstance.status = DTAuth().getStatus(profile!.appMetadata["type"] as! String)
+                    completion?(true)
+                } else {
+                    completion?(false)
+                }
+            })
         }
         
         /// Activate trial of DTConsole

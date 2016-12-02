@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'DTConsole'
-  s.version          = '0.1.1'
+  s.version          = '0.1.2'
   s.summary          = 'An on-device console for debugging purpose on iOS and tvOS'
   s.description      = 'An on-device console for debugging purpose on iOS and tvOS.'
   s.homepage         = 'https://github.com/eebean2/DTConsole'

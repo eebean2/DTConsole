@@ -273,7 +273,6 @@
 		911E1440FA04EA0D79519FA02842AB84 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 92D6AF8565B572B731633C3E110C6BA8 /* Foundation.framework */; };
 		916A19A91A49C55A907C6C5FF8649972 /* touchid_selected@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7135AC604895C03948B4FAD512CB0363 /* touchid_selected@3x.png */; };
 		91ADAD768FF610EDEF6F7E3F622E59F2 /* NSLayoutConstraint+MASDebugAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 06794EACE9807E82F1DE742ECD1CC760 /* NSLayoutConstraint+MASDebugAdditions.m */; };
-		91C836E09F7456E82AF7B7F411F03BD7 /* DTTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 742D26E159F5DBE7CE930AD92324B554 /* DTTest.swift */; };
 		9223211FFBD03CD0DC0C18974473FDD2 /* thecity@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = ED2CFC5B1F4EEA296A7A8CCFC55FD8DB /* thecity@2x.png */; };
 		922481A2CD26BF3CFC520EB22EDCDDE8 /* A0ContainerViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = 1C8FAA135EE3320D663886C1B1F0848A /* A0ContainerViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		9264BD69AFA8EE74F0D7F0EBD74F762F /* UIImage+AFNetworking.h in Headers */ = {isa = PBXBuildFile; fileRef = 7DF13EA335236D783B9AAD14FFA45F35 /* UIImage+AFNetworking.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -811,7 +810,6 @@
 		717431D5D33A2610AF4C28B6FE945291 /* A0ServiceTheme.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = A0ServiceTheme.m; path = Lock/CoreUI/A0ServiceTheme.m; sourceTree = "<group>"; };
 		733EEE13B17EDEB570D1C39FF33A14F8 /* Auth0Authentication.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Auth0Authentication.swift; path = Auth0/Auth0Authentication.swift; sourceTree = "<group>"; };
 		73BBA5F34400A42F45814ECD6AED3BC1 /* A0PasswordValidator.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = A0PasswordValidator.h; path = Lock/CoreUI/A0PasswordValidator.h; sourceTree = "<group>"; };
-		742D26E159F5DBE7CE930AD92324B554 /* DTTest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DTTest.swift; sourceTree = "<group>"; };
 		744046995017A53E976EBD00132299FE /* Pods-DTConsole_Example-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-DTConsole_Example-umbrella.h"; sourceTree = "<group>"; };
 		7462DB9A012372F8F364B7A15539238D /* weibo@3x.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; name = "weibo@3x.png"; path = "Auth0/Social/weibo@3x.png"; sourceTree = "<group>"; };
 		746366E76D00725B2224385B34B3D93C /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.0.sdk/System/Library/Frameworks/CoreGraphics.framework; sourceTree = DEVELOPER_DIR; };
@@ -1762,7 +1760,6 @@
 				16F46011173BEE56F6A94398BD7CC113 /* DTConsole.swift */,
 				8286A9EBB343F8F71DDA5FD557E7CE25 /* DTConsole+Helper.swift */,
 				5F503B5565E9972872B8B68588EB4F43 /* DTLauncher.swift */,
-				742D26E159F5DBE7CE930AD92324B554 /* DTTest.swift */,
 			);
 			path = Classes;
 			sourceTree = "<group>";
@@ -2587,7 +2584,6 @@
 				0F0BD92FF0EAB5160381914BAE93D295 /* DTConsole-dummy.m in Sources */,
 				EA237982CBF208916DC39BE6B8087585 /* DTConsole.swift in Sources */,
 				D59A7A73E46F5280652A9735FA399906 /* DTLauncher.swift in Sources */,
-				91C836E09F7456E82AF7B7F411F03BD7 /* DTTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3001,6 +2997,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_BITCODE = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREFIX_HEADER = "Target Support Files/DTConsole/DTConsole-prefix.pch";
@@ -3468,6 +3465,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_BITCODE = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREFIX_HEADER = "Target Support Files/DTConsole/DTConsole-prefix.pch";

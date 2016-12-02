@@ -8,12 +8,12 @@
 
 Pod::Spec.new do |s|
   s.name             = 'DTConsole'
-  s.version          = '0.1.2'
+  s.version          = '0.1.3'
   s.summary          = 'An on-device console for debugging purpose on iOS and tvOS'
   s.description      = 'An on-device console for debugging purpose on iOS and tvOS.'
   s.homepage         = 'https://github.com/eebean2/DTConsole'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
-  s.license          = { :type => 'MIT', :file => 'LICENSE' }
+  s.license          = { :type => 'Ap', :file => 'LICENSE' }
   s.author           = { 'Erik' => 'eebean2@me.com' }
   s.source           = { :git => 'https://github.com/eebean2/DTConsole.git', :tag => s.version.to_s }
   s.ios.deployment_target = '9.0'

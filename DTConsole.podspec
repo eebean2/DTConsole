@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.description      = 'An on-device console for debugging purpose on iOS and tvOS.'
   s.homepage         = 'https://github.com/eebean2/DTConsole'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
-  s.license          = { :type => 'Ap', :file => 'LICENSE' }
+  s.license          = { :type => 'Apache 2.0', :file => 'LICENSE' }
   s.author           = { 'Erik' => 'eebean2@me.com' }
   s.source           = { :git => 'https://github.com/eebean2/DTConsole.git', :tag => s.version.to_s }
   s.ios.deployment_target = '9.0'
@@ -25,8 +25,4 @@ Pod::Spec.new do |s|
 
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
-  s.dependency 'AFNetworking', '~> 3.0'
-  s.dependency 'Alamofire', '~> 4.0'
-  s.dependency 'Auth0', '~> 1.0'
-  s.dependency 'Lock', '~> 1.26'
 end

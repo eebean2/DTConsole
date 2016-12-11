@@ -16,9 +16,6 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-// REMOVE ME if you wish to activate with your own license
-        console.setEmail("support@yourrepairnow.com")
     }
 
     override func didReceiveMemoryWarning() {

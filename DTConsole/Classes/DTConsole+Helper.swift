@@ -16,12 +16,6 @@ public enum ConsoleOrientation {
     /// Console will display from the bottom
     @available(tvOS, unavailable, message: "You can only use default on tvOS")
     case bottom
-    /// Console will display along the left side
-    @available(tvOS, unavailable, message: "You can only use default on tvOS")
-    case left
-    /// Console will display along the right side
-    @available(tvOS, unavailable, message: "You can only use default on tvOS")
-    case right
     /// Console will default to the bottom
     case `default`
 }
@@ -29,7 +23,7 @@ public enum ConsoleOrientation {
 /// The method in which the console will print
 @available(watchOS, unavailable, message: "Please connect to an iPhone using Conosle to enable custom watchOS logging")
 public enum PrintMethod {
-    /// Prints to the CCConsole console only
+    /// Prints to the DTConsole console only
     case `default`
     /// Prints to both consoles
     case both
@@ -62,6 +56,20 @@ public enum ConsoleState {
     @objc optional func closedFullscreen()
 }
 
+@available(watchOS, unavailable, message: "DTConsole is not avalible for watchOS")
+public enum ConsoleType {
+    /// Defaults to Popover
+    case `default`
+    /// Displays a popover console
+    case popover
+    /// Displays a popover with textbox
+    case textPopover
+    /// Attaches to view as another UIView
+    case view
+    /// Attaches to view as another UIView, includes textbox
+    case textView
+}
+
 internal enum StockCommands: String {
     case enterFS =          "enterfullscreen"
     case exitFS =           "exitfullscreen"
@@ -74,6 +82,7 @@ internal enum StockCommands: String {
     case textColor =        "textcolor"
     case textBox =          "textboxcolor"
     case reset =            "consolereset"
+    case email =            "sendemail"
 }
 
 @available(watchOS, unavailable, message: "Please connect to an iPhone using DTConsole to use commands")
@@ -87,41 +96,16 @@ internal class SysConsole {
         print(item)
     }
     
-    static func prErr(_ error: String) {
+    static func prWarn<t>(_ warning: t) {
+        print(":: WARNING :: \(warning)")
+    }
+    
+    static func prErr<t>(_ error: t) {
         let name = Bundle.main.infoDictionary![kCFBundleNameKey as String]!
-        print(":: \(name) Console Error :: \(error)")
+        print(":: \(name) Console ERROR :: \(error)")
     }
     
     static func prDiag<t>(_ diag: t) {
         print(":: DIAGNOSTIC :: \(diag)")
     }
-}
-
-internal enum AuthTokenStatus: CustomStringConvertible {
-    case unauthenticated
-    case authenticated
-    case expired
-    case trial
-    var description: String {
-        switch self {
-        case .unauthenticated: return "unauthenticated"
-        case .authenticated: return "authenticated"
-        case .expired: return "expired"
-        case .trial: return "a trial user"
-        }
-    }
-    var value: Int {
-        switch self {
-        case .unauthenticated, .expired: return 0
-        case .authenticated, .trial: return 200
-        }
-    }
-}
-
-internal struct Platform {
-    
-    static var isSimulator: Bool {
-        return TARGET_OS_SIMULATOR != 0
-    }
-    
 }

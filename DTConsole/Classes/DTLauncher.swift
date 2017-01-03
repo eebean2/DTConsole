@@ -13,7 +13,7 @@ internal class DTLauncher: NSObject, UITextFieldDelegate {
     //                           Design & Animation
     
     // Console Design
-    internal private(set) var orientation = ConsoleOrientation.default
+    internal var orientation = ConsoleOrientation.default
     private var frame: CGRect!
     
     // Console Layout
@@ -58,7 +58,7 @@ internal class DTLauncher: NSObject, UITextFieldDelegate {
         #if os(iOS)
             console.isEditable = false
         #endif
-        console.text = "Welcome to \(Bundle.main.infoDictionary![kCFBundleNameKey as String]!)\n\n"
+        console.attributedText = NSAttributedString(string: "Welcome to \(Bundle.main.infoDictionary![kCFBundleNameKey as String]!)\n\n", attributes: [NSForegroundColorAttributeName: DTConsole.Settings.textColor])
         return console
     }
     
@@ -117,6 +117,7 @@ internal class DTLauncher: NSObject, UITextFieldDelegate {
         text.autocorrectionType = .no
         text.returnKeyType = .default
         text.clearButtonMode = .whileEditing
+        text.autocapitalizationType = .none
         text.textAlignment = .center
         text.textColor = DTConsole.Settings.textFieldColor
         text.tintColor = DTConsole.Settings.textFieldColor
@@ -133,38 +134,23 @@ internal class DTLauncher: NSObject, UITextFieldDelegate {
         var x = CGFloat()
         var y = CGFloat()
         
-        switch orientation {
-        case .default:
-            if UIDevice.current.systemName == "tvOS" {
-                h = frame.height - 40
-                height = frame.height - 40
-            } else {
-                h = frame.height / 3
-                height = frame.height / 3
-            }
-            
-            w = frame.width - 40
-            width = frame.width - 40
-        case .top, .bottom:
-            h = frame.height / 3
-            height = frame.height / 3
-            
-            w = frame.width - 40
-            width = frame.width - 40
-        case .left, .right:
+        if UIDevice.current.systemName == "tvOS" {
             h = frame.height - 40
             height = frame.height - 40
-            
-            w = frame.width / 3
-            width = frame.width / 3
+        } else {
+            h = frame.height / 3
+            height = frame.height / 3
         }
+        
+        w = frame.width - 40
+        width = frame.width - 40
         
         if pointOverride {
             x = self.x!
             y = self.y!
         } else {
             switch orientation {
-            case .default:
+            case .default, .bottom:
                 x = 20
                 if UIDevice.current.systemName == "tvOS" {
                     y = 20
@@ -173,16 +159,7 @@ internal class DTLauncher: NSObject, UITextFieldDelegate {
                 }
             case .top:
                 x = 20
-                y = frame.minY
-            case .bottom:
-                x = 20
-                y = frame.maxY
-            case .left:
-                x = frame.minX
-                y = 20
-            case .right:
-                x = frame.maxX
-                y = 20
+                y = 0 - h
             }
         }
         
@@ -202,8 +179,6 @@ internal class DTLauncher: NSObject, UITextFieldDelegate {
             switch orientation {
             case .default, .top, .bottom:
                 return frame.height / 3
-            case .left, .right:
-                return height
             }
         }
     }
@@ -218,12 +193,7 @@ internal class DTLauncher: NSObject, UITextFieldDelegate {
                 return DTConsole.Settings.width!
             }
         } else {
-            switch orientation {
-            case .default, .top, .bottom:
-                return width
-            case .left, .right:
-                return frame.width / 3
-            }
+            return width
         }
     }
     
@@ -234,7 +204,7 @@ internal class DTLauncher: NSObject, UITextFieldDelegate {
     
     internal func textFieldDidEndEditing(_ textField: UITextField) {
         if textField.text != "" {
-            DTCommand().filterCommand(for: textField.text!)
+            DTCommand.sharedInstance.filterCommand(for: textField.text!)
         }
     }
 }

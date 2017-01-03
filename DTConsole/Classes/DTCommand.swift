@@ -9,36 +9,68 @@ import UIKit
 
 internal class DTCommand {
     
+    internal static let sharedInstance = DTCommand()
     let console = DTConsole.sharedInstance
-    weak var delegate: DTCommandDelegate?
-    var commands = [StockCommands.enterFS.rawValue, StockCommands.exitFS.rawValue, StockCommands.close.rawValue, StockCommands.enableDiag.rawValue, StockCommands.disableDiag.rawValue, StockCommands.diagTextColor.rawValue, StockCommands.diagBackground.rawValue, StockCommands.background.rawValue, StockCommands.textColor.rawValue, StockCommands.textBox.rawValue]
+    weak var delegate: DTCommandDelegate? { return DTConsole.sharedInstance.commandDelegate }
+    var commands = [StockCommands.enterFS.rawValue, StockCommands.exitFS.rawValue, StockCommands.close.rawValue, StockCommands.enableDiag.rawValue, StockCommands.disableDiag.rawValue, StockCommands.diagTextColor.rawValue, StockCommands.diagBackground.rawValue, StockCommands.background.rawValue, StockCommands.textColor.rawValue, StockCommands.textBox.rawValue, StockCommands.email.rawValue]
     private var userCommands: Array<String>? {
         return delegate?.commandList()
     }
     
-    init() { }
+    private init() { }
     
     var command = String()
     var arguments = [String]()
     var total = Int()
     func filterCommand(for string: String) {
         let text = string.lowercased()
+        
+        SysConsole.prDiag("Command Text: \(text)")
+        
         let parts = text.components(separatedBy: " ")
+        
+        SysConsole.prDiag("Command Parts: \(parts)")
+        
         total = parts.count
+        
+        SysConsole.prDiag("Total Parts: \(total)")
+        
         for part in parts {
+            
+            SysConsole.prDiag("Command: \(part)")
+            
             if part.characters.first == "-" {
-                if command != "" || total == 1 {
+                if command == "" && total == 1 {
                     checkCommand(command: String(part.characters.dropFirst(1)), arguments: arguments)
                     arguments.removeAll()
+                    command = ""
+                    
+                    SysConsole.prDiag("Exited")
+                    
+                } else if command != "" {
+                    console.printError("You may only use one command at a time!", method: .both)
+                    checkCommand(command: String(part.characters.dropFirst(1)), arguments: arguments)
+                    arguments.removeAll()
+                    command = ""
+                    
+                    SysConsole.prDiag("Exited")
+                    
+                    return
+                } else {
+                    command = String(part.characters.dropFirst(1))
                 }
-                command = String(part.characters.dropFirst(1))
             } else {
                 if total == 1 {
                     arguments.append(part)
                     checkCommand(command: command, arguments: arguments)
                     arguments.removeAll()
+                    command = ""
+                    
+                    SysConsole.prDiag("Exited")
+                    
+                } else {
+                    arguments.append(part)
                 }
-                arguments.append(part)
             }
             total -= 1
         }
@@ -65,7 +97,6 @@ internal class DTCommand {
     }
     
     func commandList(_ command: String, argument: String? = nil) {
-        let color = getColor(forString: argument)
         switch command {
         case StockCommands.enterFS.rawValue:
             console.displayFullscreen()
@@ -83,49 +114,36 @@ internal class DTCommand {
             console.disableDiagMode()
             console.print("Diagnostic Mode Disabled", method: .both)
         case StockCommands.diagTextColor.rawValue:
-            if color != nil {
-                console.setDiagTextColor(color!)
-                console.print("Diagnostic text color changed to \(argument!)", method: .both)
-            } else {
-                console.printError("Invalid Diagnostic Text Color", method: .both)
-            }
+            let color = getColor(argument)
+            console.setDiagTextColor(color)
+            console.print("Diagnostic text color changed to \(color)", method: .both)
         case StockCommands.diagBackground.rawValue:
-            if color != nil {
-                console.setDiagBackgroundColor(color!)
-                console.print("Diagnostic background color changed to \(argument!)", method: .both)
-            } else {
-                console.printError("Invalid Diagnostic Background Color", method: .both)
-            }
+            let color = getColor(argument)
+            console.setDiagBackgroundColor(color)
+            console.print("Diagnostic background color changed to \(color)", method: .both)
         case StockCommands.background.rawValue:
-            if color != nil {
-                console.setBackgroundColor(color!)
-                console.print("Background color changed to \(argument!)", method: .both)
-            } else {
-                console.printError("Invalid Background Color", method: .both)
-            }
+            let color = getColor(argument)
+            console.setBackgroundColor(color)
+            console.print("Background color changed to \(color)", method: .both)
         case StockCommands.textColor.rawValue:
-            if color != nil {
-                console.setTextColor(color!)
-                console.print("Text color changed to \(argument!)", method: .both)
-            } else {
-                console.printError("Invalid Text Color", method: .both)
-            }
+            let color = getColor(argument)
+            console.setTextColor(color)
+            console.print("Text color changed to \(color)", method: .both)
         case StockCommands.textBox.rawValue:
-            if color != nil {
-                console.setTextFieldColor(color!)
-                console.print("Textbox changed to \(argument!)", method: .both)
-            } else {
-                console.printError("Invalid Color for the TextField", method: .both)
-            }
+            let color = getColor(argument)
+            console.setTextFieldColor(color)
+            console.print("Textbox changed to \(color)", method: .both)
         case StockCommands.reset.rawValue:
             console.resetConsole()
             console.print("Console Reset", method: .xcodeOnly)
+        case StockCommands.email.rawValue:
+            console.sendEmail(to: [argument!])
         default:
             console.printError("Unknown System Command \(command), please check function \(#function) for missing StockCommands variables", method: .both)
         }
     }
     
-    func getColor(forString string: String?) -> UIColor? {
+    func getColor(_ string: String?) -> UIColor {
         var color = String()
         if string != nil {
             color = string!
@@ -136,7 +154,7 @@ internal class DTCommand {
         case "brown":       return UIColor.brown
         case "cyan":        return UIColor.cyan
         case "darkgray":    return UIColor.darkGray
-        case "daktext":    return UIColor.darkText
+        case "daktext":     return UIColor.darkText
         case "gray":        return UIColor.gray
         case "green":       return UIColor.green
         case "lightgray":   return UIColor.lightGray
@@ -147,7 +165,11 @@ internal class DTCommand {
         case "red":         return UIColor.red
         case "whte":        return UIColor.white
         case "yellow":      return UIColor.yellow
-        default:            return nil
+            // DEFAULT as of 0.1.3 is Green instead of nil
+        default:
+            console.printError("Invalid Text Color", method: .both)
+            console.printError("Setting color to default Green", method: .both)
+            return UIColor.green
         }
     }
 }

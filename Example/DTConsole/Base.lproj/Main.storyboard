@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11542" systemVersion="16C48b" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11762" systemVersion="16D17a" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
     <device id="retina4_7" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11524"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11757"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -81,10 +81,14 @@
                     <navigationItem key="navigationItem" title="Full View Demo" id="PAH-M3-ZCy">
                         <barButtonItem key="leftBarButtonItem" systemItem="done" id="b8N-Qe-jCJ">
                             <connections>
-                                <segue destination="sK2-LJ-6Kp" kind="unwind" unwindAction="unwindToHomeWithSegue:" id="djE-Yz-PIz"/>
+                                <segue destination="sK2-LJ-6Kp" kind="unwind" unwindAction="unwindToHome:" id="OQ5-qt-0bX"/>
                             </connections>
                         </barButtonItem>
-                        <barButtonItem key="rightBarButtonItem" systemItem="trash" id="ygC-eV-l7E"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="trash" id="ygC-eV-l7E">
+                            <connections>
+                                <action selector="clear" destination="CgQ-Sd-yyB" id="ZWc-R7-cA6"/>
+                            </connections>
+                        </barButtonItem>
                     </navigationItem>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Bgb-kG-zdO" userLabel="First Responder" sceneMemberID="firstResponder"/>

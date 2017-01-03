@@ -17,9 +17,9 @@ class ConsoleView: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         if type == "textbox" {
-            console.setupTextConsoleAndDisplay(in: view, completion: nil)
+            console.setup(on: self, type: .textView, completion: nil)
         } else if type == "console" {
-            console.setupAndDisplay(in: view, completion: nil)
+            console.setup(on: self, type: .view, completion: nil)
         }
     }
     
